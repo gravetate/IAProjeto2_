@@ -1,0 +1,86 @@
+% Definir a função a ser otimizada
+f = @(x) 4 * (sin(5 * pi * x + 0.5).^6) .* exp(log2((x - 0.8).^2));
+
+% Parâmetros comuns
+search_space = [0, 1.6]; % Limites do espaço de busca
+
+% Parâmetros para Hill Climbing com Reinicializações
+max_iterations_hc = 300;       % Máximo de iterações por reinicialização
+num_restarts = 10;             % Número de reinicializações
+restart_threshold = 0.02 * (search_space(2) - search_space(1)); % Distância máxima para vizinhos
+
+% Parâmetros para Simulated Annealing
+T_initial = 1.0;         % Temperatura inicial
+T_final = 1e-6;          % Temperatura final
+alfa = 0.99;             % Taxa de resfriamento
+nRep = 100;              % Número de repetições por temperatura
+
+% Comparação dos algoritmos
+fprintf('Comparando Subida da Colina com Reinicializações e Simulated Annealing\n');
+fprintf('------------------------------------------------------------------\n');
+
+% Executar Hill Climbing com Reinicializações
+tic; % Início do cronômetro
+[best_hc_x, best_hc_f, history_hc] = hill_climbing_with_restarts(f, search_space, max_iterations_hc, num_restarts, restart_threshold);
+time_hc = toc; % Fim do cronômetro
+fprintf('Subida da Colina:\n');
+fprintf('Melhor solução encontrada: x = %.6f, f(x) = %.6f\n', best_hc_x, best_hc_f);
+fprintf('Tempo de execução: %.6f segundos\n', time_hc);
+
+% Executar Simulated Annealing
+tic; % Início do cronômetro
+[best_sa_x, best_sa_f, history_sa_x, history_sa_f] = simulated_annealing(f, search_space, T_initial, T_final, alfa, nRep);
+time_sa = toc; % Fim do cronômetro
+fprintf('Simulated Annealing:\n');
+fprintf('Melhor solução encontrada: x = %.6f, f(x) = %.6f\n', best_sa_x, best_sa_f);
+fprintf('Tempo de execução: %.6f segundos\n', time_sa);
+
+% Comparação Visual
+x_vals = linspace(search_space(1), search_space(2), 1000);
+f_vals = f(x_vals);
+
+% Gráfico 1: Função e Melhores Soluções
+figure;
+plot(x_vals, f_vals, 'b-', 'LineWidth', 1.5);
+hold on;
+plot(best_hc_x, best_hc_f, 'ro', 'MarkerSize', 10, 'MarkerFaceColor', 'r', 'DisplayName', 'Hill Climbing');
+plot(best_sa_x, best_sa_f, 'go', 'MarkerSize', 10, 'MarkerFaceColor', 'g', 'DisplayName', 'Simulated Annealing');
+title('Comparação de Otimização');
+xlabel('x');
+ylabel('f(x)');
+legend('f(x)', 'Hill Climbing', 'Simulated Annealing', 'Location', 'Best');
+grid on;
+
+% Gráfico 2: Histórico das Buscas
+figure;
+
+% Plotar o histórico da Subida da Colina
+plot(history_hc(:, 2), history_hc(:, 3), 'r.-', 'MarkerSize', 10, 'LineWidth', 1.5, 'DisplayName', 'Hill Climbing');
+
+hold on;
+
+% Plotar o histórico do Simulated Annealing
+plot(history_sa_x, history_sa_f, 'g.-', 'MarkerSize', 8, 'LineWidth', 1, 'DisplayName', 'Simulated Annealing');
+
+% Adicionar informações visuais do melhor ponto
+plot(best_hc_x, best_hc_f, 'ro', 'MarkerSize', 12, 'MarkerFaceColor', 'r', 'DisplayName', 'Melhor - Hill Climbing');
+plot(best_sa_x, best_sa_f, 'go', 'MarkerSize', 12, 'MarkerFaceColor', 'g', 'DisplayName', 'Melhor - Simulated Annealing');
+
+% Configurar o gráfico
+title('Comparação do Histórico das Buscas');
+xlabel('x');
+ylabel('f(x)');
+legend('Location', 'Best');
+grid on;
+
+% Ajustar limites do eixo para melhorar a visualização
+xlim([search_space(1), search_space(2)]);
+ylim([0, 2]);
+
+% Resumo
+fprintf('------------------------------------------------------------------\n');
+fprintf('Resumo da Comparação:\n');
+fprintf('Melhor Solução - Hill Climbing: f(x) = %.6f (x = %.6f)\n', best_hc_f, best_hc_x);
+fprintf('Melhor Solução - Simulated Annealing: f(x) = %.6f (x = %.6f)\n', best_sa_f, best_sa_x);
+fprintf('Tempo de Execução - Hill Climbing: %.6f segundos\n', time_hc);
+fprintf('Tempo de Execução - Simulated Annealing: %.6f segundos\n', time_sa);

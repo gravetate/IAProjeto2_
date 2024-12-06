@@ -5,9 +5,7 @@ close all;      % Close all figures
 %------------------------------------------------------------------------
 % Loading cities in Portugal
 pt_nt; % Carregar conjunto de cidades (14 cidades no Norte de Portugal)
-%pt_nt_sul_20;
 set_id = 1; 
-
 
 % Input Settings
 inputcities = cities; % Coordenadas geográficas das cidades
@@ -16,8 +14,15 @@ inputcities = cities; % Coordenadas geográficas das cidades
 latitudes = inputcities(:, 1);
 longitudes = inputcities(:, 2);
 
+% Ajustar os limites do mapa
+margin = 0.2; % Margem adicional para visualização
+latMin = min(latitudes) - margin;
+latMax = max(latitudes) + margin;
+lonMin = min(longitudes) - margin;
+lonMax = max(longitudes) + margin;
+
 % Plot initial map with cities
-figure;
+figure('Position', [100, 100, 800, 600]); % Ajustar tamanho da janela
 geobasemap('streets'); % Fundo do mapa geográfico
 hold on;
 
@@ -29,7 +34,7 @@ text(latitudes, longitudes, citynames, 'VerticalAlignment', 'bottom', 'Horizonta
 title('Mapa Inicial das Cidades em Portugal (TSP)');
 
 % Definir limites do mapa
-geolimits([min(latitudes)-0.5, max(latitudes)+0.5], [min(longitudes)-0.5, max(longitudes)+0.5]);
+geolimits([latMin, latMax], [lonMin, lonMax]);
 hold off;
 
 %------------------------------------------------------------------------
@@ -51,13 +56,13 @@ nRep = 100;     % Número de iterações por temperatura
 fprintf(1, 'Optimized roundtrip length: %4.2f Km\n', bestDistance);
 
 % Plot optimized route with map
-figure;
+figure('Position', [100, 100, 1000, 800]); % Ajustar tamanho da janela
 geobasemap('streets'); % Fundo do mapa
 hold on;
 
 % Plotar as cidades no mapa
 geoscatter(latitudes, longitudes, 100, 'r', 'filled');
-text(latitudes, longitudes, citynames, 'VerticalAlignment', 'bottom', 'HorizontalAlignment', 'right');
+text(latitudes + 0.03, longitudes, citynames, 'VerticalAlignment', 'bottom', 'HorizontalAlignment', 'center', 'FontSize', 10, 'Color', 'blue');
 
 % Adicionar rota otimizada
 optimizedLatitudes = latitudes(bestRoute);
@@ -65,8 +70,15 @@ optimizedLongitudes = longitudes(bestRoute);
 geoplot([optimizedLatitudes; optimizedLatitudes(1)], [optimizedLongitudes; optimizedLongitudes(1)], '-g', 'LineWidth', 2);
 
 % Adicionar título ao mapa
-title('Rota Otimizada (Simulated Annealing)');
+title('Rota Otimizada (Simulated Annealing)', 'FontSize', 14);
 
-% Definir limites do mapa
-geolimits([min(latitudes)-0.5, max(latitudes)+0.5], [min(longitudes)-0.5, max(longitudes)+0.5]);
+% Definir limites do mapa com margem adicional
+margin = 0.2; % Margem para melhor visualização
+latMin = min(latitudes) - margin;
+latMax = max(latitudes) + margin;
+lonMin = min(longitudes) - margin;
+lonMax = max(longitudes) + margin;
+geolimits([latMin, latMax], [lonMin, lonMax]);
+
 hold off;
+
