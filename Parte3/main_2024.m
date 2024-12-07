@@ -1,84 +1,94 @@
-clc;            % Clear screen
-clear all;      % Clear all variables from workspace
-close all;      % Close all figures
+clc;             % Limpa a janela de comando
+clear all;       % Limpa todas as variáveis do workspace
+close all;       % Fecha todas as janelas gráficas
 
-%------------------------------------------------------------------------
-% Loading cities in Portugal
-pt_nt; % Carregar conjunto de cidades (14 cidades no Norte de Portugal)
-set_id = 1; 
+% Escolher o conjunto de cidades
+% Caso queira 14 cidades no norte de Portugal:
+pt_nt;        % Carrega as 14 cidades
+set_id = 1;   % Ajuste do set_id para melhor plotagem
 
-% Input Settings
-inputcities = cities; % Coordenadas geográficas das cidades
+% Caso queira outro conjunto, basta comentar/descomentar as linhas acima e abaixo
+% pt_nt_sul_20; set_id = 2;  % 20 cidades
+% pt_nt_sul_30; set_id = 2;  % 30 cidades
 
-% Extract latitude and longitude
-latitudes = inputcities(:, 1);
-longitudes = inputcities(:, 2);
+num_cities = length(cities);
 
-% Ajustar os limites do mapa
-margin = 0.2; % Margem adicional para visualização
-latMin = min(latitudes) - margin;
-latMax = max(latitudes) + margin;
-lonMin = min(longitudes) - margin;
-lonMax = max(longitudes) + margin;
+% Parâmetros do Simulated Annealing
+T_initial = 1000; 
+T_final = 1e-3;
+alfa = 0.99;
+nRep = 100;
 
-% Plot initial map with cities
-figure('Position', [100, 100, 800, 600]); % Ajustar tamanho da janela
-geobasemap('streets'); % Fundo do mapa geográfico
+% Registrar o tempo de início
+tic;
+
+% Executa o Simulated Annealing para o TSP
+[best_solution, best_cost, history_cost] = simulated_annealing_tsp(cities, T_initial, T_final, alfa, nRep);
+
+% Registra o tempo total de execução
+exec_time = toc;
+
+% Cálculo da rota final e distância
+best_route_cities = cities(:, best_solution);
+dist_best = distance_24(best_route_cities);
+
+% Custo inicial (primeira iteração do histórico)
+initial_cost = history_cost(1);
+final_cost = best_cost;
+percent_reduction = ((initial_cost - final_cost) / initial_cost) * 100;
+
+% Plotagem da rota final em coordenadas simples
+figure;
+plotcities_2024(best_route_cities, set_id);
+axis auto;
+title('Rota Final Encontrada pelo Simulated Annealing');
+xlabel('Longitude');
+ylabel('Latitude');
+grid on;
+
+% Plotagem da rota no mapa geográfico
+figure;
+geoplot(best_route_cities(1,:), best_route_cities(2,:), '-o', 'MarkerFaceColor', 'r', 'LineWidth', 1.5);
+geobasemap('satellite');
+title('Rota sobre o mapa de Portugal');
+
+% Apresentação dos resultados no Command Window
+fprintf('\n=============== RESULTADOS DO SIMULATED ANNEALING ===============\n');
+fprintf('Número de cidades visitadas: %d\n', num_cities);
+fprintf('Distância total da melhor rota: %4.2f Km\n', dist_best);
+fprintf('Custo inicial: %4.2f\n', initial_cost);
+fprintf('Custo final (melhor encontrado): %4.2f\n', final_cost);
+fprintf('Redução percentual de custo: %4.2f %%\n', percent_reduction);
+fprintf('Temperatura inicial: %g\n', T_initial);
+fprintf('Temperatura final: %g\n', T_final);
+fprintf('Fator de arrefecimento (alfa): %g\n', alfa);
+fprintf('Número de repetições por temperatura: %d\n', nRep);
+fprintf('Tempo total de execução: %4.2f segundos\n', exec_time);
+fprintf('=================================================================\n\n');
+
+% Plotar o histórico do custo
+figure;
+plot(history_cost, 'LineWidth', 1.5);
+xlabel('Iterações');
+ylabel('Custo da Solução');
+title('Evolução do Custo no Simulated Annealing para o TSP');
+grid on;
+
+% Estatísticas adicionais sobre o histórico de custo
+[~, idx_best] = min(history_cost);
+fprintf('Iteração da melhor solução encontrada: %d\n', idx_best);
+fprintf('Custo médio ao longo das iterações: %4.2f\n', mean(history_cost));
+fprintf('Custo máximo ao longo das iterações: %4.2f\n', max(history_cost));
+fprintf('Custo mínimo ao longo das iterações: %4.2f\n\n', min(history_cost));
+
+% Caso queira apresentar estatísticas graficamente
+figure;
 hold on;
-
-% Plotar as cidades no mapa
-geoscatter(latitudes, longitudes, 100, 'r', 'filled');
-text(latitudes, longitudes, citynames, 'VerticalAlignment', 'bottom', 'HorizontalAlignment', 'right');
-
-% Adicionar título ao mapa
-title('Mapa Inicial das Cidades em Portugal (TSP)');
-
-% Definir limites do mapa
-geolimits([latMin, latMax], [lonMin, lonMax]);
+plot(history_cost, 'b-', 'LineWidth', 1.5);
+plot(idx_best, best_cost, 'ro', 'MarkerFaceColor', 'r', 'MarkerSize', 8);
+title('Evolução do Custo e Ponto da Melhor Solução');
+xlabel('Iterações');
+ylabel('Custo');
+legend({'Custo ao longo do SA', 'Melhor Solução'}, 'Location', 'Best');
+grid on;
 hold off;
-
-%------------------------------------------------------------------------
-% Initial trip distance
-initialDist = distance_24(inputcities);
-fprintf(1, 'Initial roundtrip length for %d cities: %4.2f Km\n', length(inputcities), initialDist);
-
-%------------------------------------------------------------------------
-% Simulated Annealing Optimization
-% Parameters
-T = 1000;       % Temperatura inicial
-alpha = 0.95;   % Fator de decaimento da temperatura
-nRep = 100;     % Número de iterações por temperatura
-
-% Call Simulated Annealing function
-[bestRoute, bestDistance] = simulated_annealing_tsp(inputcities, T, alpha, nRep);
-
-% Results
-fprintf(1, 'Optimized roundtrip length: %4.2f Km\n', bestDistance);
-
-% Plot optimized route with map
-figure('Position', [100, 100, 1000, 800]); % Ajustar tamanho da janela
-geobasemap('streets'); % Fundo do mapa
-hold on;
-
-% Plotar as cidades no mapa
-geoscatter(latitudes, longitudes, 100, 'r', 'filled');
-text(latitudes + 0.03, longitudes, citynames, 'VerticalAlignment', 'bottom', 'HorizontalAlignment', 'center', 'FontSize', 10, 'Color', 'blue');
-
-% Adicionar rota otimizada
-optimizedLatitudes = latitudes(bestRoute);
-optimizedLongitudes = longitudes(bestRoute);
-geoplot([optimizedLatitudes; optimizedLatitudes(1)], [optimizedLongitudes; optimizedLongitudes(1)], '-g', 'LineWidth', 2);
-
-% Adicionar título ao mapa
-title('Rota Otimizada (Simulated Annealing)', 'FontSize', 14);
-
-% Definir limites do mapa com margem adicional
-margin = 0.2; % Margem para melhor visualização
-latMin = min(latitudes) - margin;
-latMax = max(latitudes) + margin;
-lonMin = min(longitudes) - margin;
-lonMax = max(longitudes) + margin;
-geolimits([latMin, latMax], [lonMin, lonMax]);
-
-hold off;
-
