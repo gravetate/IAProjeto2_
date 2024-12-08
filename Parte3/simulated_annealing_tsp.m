@@ -1,5 +1,5 @@
 function [best_solution, best_cost, history_cost] = simulated_annealing_tsp(cities, T_initial, T_final, alfa, nRep)
-    n = size(cities,2); % número de cidades
+    n = size(cities,2); 
     current_solution = randperm(n);
     current_cost = tour_distance(current_solution, cities);
 
@@ -11,14 +11,11 @@ function [best_solution, best_cost, history_cost] = simulated_annealing_tsp(citi
 
     while T > T_final
         for rep = 1:nRep
-            % Gera solução vizinha: troca a posição de duas cidades
             new_solution = generate_neighbor(current_solution);
             new_cost = tour_distance(new_solution, cities);
             dE = new_cost - current_cost;
 
-            % Critério de aceitação (problema de minimização)
             if dE < 0
-                % Melhor solução
                 current_solution = new_solution;
                 current_cost = new_cost;
                 if current_cost < best_cost
@@ -26,7 +23,6 @@ function [best_solution, best_cost, history_cost] = simulated_annealing_tsp(citi
                     best_cost = current_cost;
                 end
             else
-                % Solução pior, aceita com probabilidade exp(-dE/T)
                 if rand < exp(-dE / T)
                     current_solution = new_solution;
                     current_cost = new_cost;
